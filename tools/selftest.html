@@ -1,0 +1,105 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Field Manual · self-test</title>
+<style>body{font:14px/1.5 ui-monospace,monospace;padding:20px;background:#111;color:#ddd}.bad{color:#ff7b6b}.ok{color:#8fd18f}</style>
+<h1>Self-test</h1>
+<p>Runs every exercise: the starter code must fail, the solution must pass. Add <code>?only=html</code> (track or mission id prefix) to narrow it.</p>
+<pre id="out">running…</pre>
+<script src="../js/core.js"></script>
+<script src="../js/runner.js"></script>
+<script src="../content/tracks.js"></script>
+<script>
+(async function () {
+  const params = new URLSearchParams(location.search);
+  const files = (params.get('files') || 'html,css,js-1,js-2').split(',').filter(Boolean);
+  for (const f of files) {
+    await new Promise((res) => {
+      const s = document.createElement('script');
+      s.src = '../content/' + f + '.js';
+      s.onload = res;
+      s.onerror = () => { window.__loadErrors = (window.__loadErrors || []).concat('could not load ' + f + '.js'); res(); };
+      document.body.appendChild(s);
+    });
+  }
+  FM.finalize();
+  const frame = document.createElement('iframe');
+  frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-modals allow-forms');
+  frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0';
+  document.body.appendChild(frame);
+
+  const only = params.get('only');
+  const problems = [];
+  const stats = { missions: 0, steps: 0, tasks: 0, quizzes: 0, fills: 0, exhibits: 0, checks: 0 };
+  const TYPES = new Set(['brief', 'exhibit', 'quiz', 'fill', 'task', 'debrief']);
+  const pick = (s, over) => {
+    const f = {};
+    for (const k of ['html', 'css', 'js']) if (typeof s[k] === 'string') f[k] = s[k];
+    if (over) for (const k of ['html', 'css', 'js']) if (typeof over[k] === 'string') f[k] = over[k];
+    if (!Object.keys(f).length) f[s.mission.track.lang] = '';
+    return f;
+  };
+  const seenIds = new Set();
+
+  for (const m of FM.missions) {
+    if (only && !(m.id.startsWith(only) || m.track.id === only)) continue;
+    stats.missions++;
+    const P = (i, msg) => problems.push(m.id + (i == null ? '' : ' · step ' + (i + 1)) + ': ' + msg);
+    if (seenIds.has(m.id)) P(null, 'duplicate mission id');
+    seenIds.add(m.id);
+    if (!m.title) P(null, 'no title');
+    if (!m.steps || !m.steps.length) { P(null, 'no steps'); continue; }
+    if (!m.steps.some((s) => s.type === 'task')) P(null, 'no task step');
+    if (m.steps[m.steps.length - 1].type !== 'debrief') P(null, 'last step should be a debrief');
+    for (const s of m.steps) {
+      stats.steps++;
+      const i = s.index;
+      if (!TYPES.has(s.type)) { P(i, 'unknown step type ' + s.type); continue; }
+      try { if (s.body) FM.md(s.body); if (s.q) FM.md(s.q); if (s.explain) FM.md(s.explain); if (s.hint) FM.md(s.hint); } catch (e) { P(i, 'markdown failed: ' + e.message); }
+      if (s.type === 'brief' && !s.body) P(i, 'brief without body');
+      if (s.type === 'debrief' && !(Array.isArray(s.points) && s.points.length)) P(i, 'debrief without points');
+      if (s.type === 'quiz') {
+        stats.quizzes++;
+        if (!s.q) P(i, 'quiz without q');
+        if (!Array.isArray(s.options) || s.options.length < 2) P(i, 'quiz needs 2+ options');
+        const ans = Array.isArray(s.answer) ? s.answer : [s.answer];
+        if (!ans.length || ans.some((a) => !(Number.isInteger(a) && a >= 0 && a < (s.options || []).length))) P(i, 'quiz answer index out of range');
+        if (new Set(s.options).size !== (s.options || []).length) P(i, 'duplicate quiz options');
+        if (s.options && s.options.some((o) => /all of the above|none of the above|both of the above/i.test(o)) && s.shuffle !== false) P(i, '"all/none of the above" needs shuffle:false');
+      }
+      if (s.type === 'fill') {
+        stats.fills++;
+        if (!s.q || !s.code) P(i, 'fill needs q and code');
+        const { answers } = FM.parseBlanks ? FM.parseBlanks(s.code) : { answers: (s.code.match(/\[\[(.+?)\]\]/g) || []).map((x) => x.slice(2, -2).split('|')) };
+        if (!answers.length) P(i, 'fill has no [[blanks]]');
+        if (s.options) for (const a of answers) if (!s.options.includes(a[0])) P(i, 'fill answer "' + a[0] + '" is missing from options');
+      }
+      if (s.type === 'exhibit') {
+        stats.exhibits++;
+        const r = await FM.check(frame, pick(s), [], {});
+        if (r.errors.length && !s.expectError) P(i, 'exhibit throws: ' + r.errors[0]);
+      }
+      if (s.type === 'task') {
+        stats.tasks++;
+        if (!s.body) P(i, 'task without body');
+        if (!Array.isArray(s.checks) || !s.checks.length) { P(i, 'task without checks'); continue; }
+        stats.checks += s.checks.length;
+        s.checks.forEach((c, k) => { if (!c.text || typeof c.test !== 'function') P(i, 'check ' + (k + 1) + ' needs text and test'); });
+        if (!s.solution) { P(i, 'task without solution'); continue; }
+        if (s.edit) for (const k of Object.keys(s.solution)) if (!s.edit.includes(k)) P(i, 'solution changes non-editable ' + k);
+        const start = await FM.check(frame, pick(s), s.checks, { wait: s.wait, debug: true });
+        if (start.passed && !s.starterPasses) P(i, 'starter code already passes every check');
+        const sol = await FM.check(frame, pick(s, s.solution), s.checks, { wait: s.wait, debug: true });
+        if (!sol.passed) {
+          const bad = sol.results.map((r, k) => (r.ok ? null : '"' + s.checks[k].text + '"' + (r.msg ? ' (' + r.msg + ')' : ''))).filter(Boolean);
+          P(i, 'solution fails: ' + bad.join('; '));
+        }
+        if (sol.errors.length && !s.expectError) P(i, 'solution throws: ' + sol.errors[0]);
+      }
+    }
+  }
+  const result = { stats, problems };
+  window.__result = result;
+  const out = document.getElementById('out');
+  out.innerHTML = '<span class="' + (problems.length ? 'bad' : 'ok') + '">' + (problems.length ? problems.length + ' problem(s)' : 'All good') + '</span>\n' + JSON.stringify(stats) + '\n\n' + problems.map((p) => FM.esc(p)).join('\n');
+})().catch((e) => { window.__result = { stats: {}, problems: ['self-test crashed: ' + e.stack] }; document.getElementById('out').textContent = e.stack; });
+</script>

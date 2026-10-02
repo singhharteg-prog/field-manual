@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#e7dcc3"/>
+  <g transform="rotate(-6 256 256)">
+    <rect x="96" y="136" width="320" height="240" rx="14" fill="none" stroke="#a8271d" stroke-width="22"/>
+    <text x="256" y="314" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-weight="700" font-size="150" fill="#a8271d" letter-spacing="6">FM</text>
+  </g>
+</svg>
