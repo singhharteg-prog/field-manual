@@ -140,18 +140,19 @@
       const out = [];
       for (const m of FM.missions) {
         const ms = state.missions[m.id];
-        if (!ms || !(ms.done || ms.seen > 0)) continue;
+        if (!ms || !ms.done) continue;
         m.steps.forEach((s, i) => {
-          if ((s.type === 'quiz' || s.type === 'fill') && (ms.done || i <= ms.seen)) out.push({ key: m.id + '#' + i, mission: m, step: s });
+          if (s.type === 'quiz' || s.type === 'fill') out.push({ key: m.id + '#' + i, mission: m, step: s, doneAt: ms.doneAt || 0 });
         });
       }
       return out;
     },
+    // A question first comes up for review the day after its mission.
     drillDue() {
       const now = Date.now();
       return S.drillItems().filter((it) => {
         const d = state.drills[it.key];
-        return !d || d.due <= now;
+        return d ? d.due <= now : it.doneAt + 20 * 36e5 <= now;
       });
     },
     drillAnswer(key, correct) {

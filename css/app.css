@@ -166,6 +166,10 @@ button {
   cursor: pointer;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :focus-visible {
   outline: 2px dashed var(--red);
   outline-offset: 3px;

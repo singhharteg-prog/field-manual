@@ -17,6 +17,7 @@ const CORE = [
   'content/js-1.js',
   'content/js-2.js',
   'icon.svg',
+  'icon-192.png',
   'manifest.webmanifest',
 ];
 
