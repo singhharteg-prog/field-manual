@@ -8,7 +8,7 @@ No build step, no dependencies, no account. Open `index.html`.
 
 ## Using it
 
-- **Locally:** double-click `learn/index.html`. Everything works from the
+- **Locally:** double-click `index.html`. Everything works from the
   file, apart from offline install.
 - **Hosted:** serve the folder from any static host (GitHub Pages, Cloudflare
   Pages, Netlify). Over `https` it installs as an app on a phone or desktop
@@ -54,12 +54,18 @@ tools/validate.cjs    the same, headless (needs Playwright)
 CONTENT_GUIDE.md      how to write or edit missions
 ```
 
+## Hosting on GitHub Pages
+
+Settings → Pages → *Deploy from a branch* → `main` / `(root)`. The app is then
+at `https://<username>.github.io/field-manual/`. Pages on a private repo needs
+a paid GitHub plan; any other static host works too.
+
 ## Editing the course
 
 Missions are plain JavaScript objects. See `CONTENT_GUIDE.md`. After any change:
 
 ```bash
-node learn/tools/validate.cjs
+node tools/validate.cjs
 ```
 
 It runs every field test with the starter code (which must fail) and the
