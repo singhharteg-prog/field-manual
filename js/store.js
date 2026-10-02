@@ -15,7 +15,7 @@
     tasks: {}, // missionId#step → { files, passed, tries, revealed }
     days: {}, // YYYY-MM-DD → actions
     drills: {}, // missionId#step → { box, due }
-    settings: { theme: 'auto', sound: false, codeSize: 15, motion: true },
+    settings: { theme: 'auto', sound: false, codeSize: 15, motion: true, wrap: false },
     safehouse: { current: null, snippets: [] },
     last: null,
   });

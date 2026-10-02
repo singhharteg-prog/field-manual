@@ -440,6 +440,7 @@
       wait: sleep,
       // Resize the preview so media queries can be tested. Always restored.
       viewport: async (w) => {
+        if (!('fmWidth' in iframe.dataset)) iframe.dataset.fmWidth = iframe.style.width;
         iframe.style.width = w + 'px';
         iframe.style.maxWidth = 'none';
         await sleep(80);
@@ -474,8 +475,11 @@
       }
       results.push({ ok, msg: ok ? '' : msg || ch.fail || '' });
     }
-    iframe.style.width = '';
-    iframe.style.maxWidth = '';
+    if ('fmWidth' in iframe.dataset) {
+      iframe.style.width = iframe.dataset.fmWidth;
+      iframe.style.maxWidth = '';
+      delete iframe.dataset.fmWidth;
+    }
     return { results, passed: results.every((r) => r.ok), errors: c.errors, logs: c.liveLogs() };
   };
 })();

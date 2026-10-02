@@ -44,6 +44,7 @@
     const ta = wrap.querySelector('textarea');
     ta.setAttribute('aria-label', opts.label || lang.toUpperCase() + ' code');
     if (opts.readOnly) ta.readOnly = true;
+    ta.wrap = document.documentElement.classList.contains('wrap-code') ? 'soft' : 'off';
     ta.value = opts.value || '';
 
     let raf = 0;

@@ -20,7 +20,8 @@ try {
   const browser = await chromium.launch();
   const page = await browser.newPage();
   const pageErrors = [];
-  page.on('pageerror', (e) => pageErrors.push(e.message + ' @ ' + ((e.stack || '').match(/content\/[\w-]+\.js:\d+:\d+/) || [''])[0]));
+  // Course-file errors are collected by selftest.html itself (window.__loadErrors);
+  // Playwright's pageerror also fires for learner code in preview iframes, so it isn't used.
   const file = 'file://' + path.resolve(__dirname, 'selftest.html') + '?only=' + encodeURIComponent(only) + (files ? '&files=' + encodeURIComponent(files) : '');
   await page.goto(file);
   await page.waitForFunction(() => window.__result, null, { timeout: 600000 });

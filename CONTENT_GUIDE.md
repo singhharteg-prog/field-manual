@@ -280,3 +280,10 @@ blocks with a language (```` ```html ````, `css`, `js`), `| tables |` with a
 header row, `> note` (amber box) and `>! warning` (red box). Raw HTML in
 Markdown is **escaped and shown as text**, so you can write `<p>` in prose,
 though backticks look better: `` `<p>` ``.
+
+Inline code can't contain a backtick, so show template literals in fenced
+code blocks.
+
+`c.submit()` uses `requestSubmit()`, so the browser's own validation
+(`required`, `type="email"`) runs first and can block the submit. Add
+`novalidate` to the form when JavaScript does the validating.

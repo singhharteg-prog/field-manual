@@ -158,6 +158,7 @@
     document.documentElement.dataset.theme = t;
     document.documentElement.style.setProperty('--code-size', (S.state.settings.codeSize || 15) + 'px');
     document.documentElement.classList.toggle('no-motion', !S.state.settings.motion);
+    document.documentElement.classList.toggle('wrap-code', !!S.state.settings.wrap);
     const meta = $('meta[name="theme-color"]');
     if (meta) meta.content = t === 'night' ? '#14130f' : '#e7dcc3';
     try {
@@ -707,7 +708,8 @@
     opts = opts || {};
     const { tpl, answers } = parseBlanks(step.code);
     const lang = step.lang || (step.mission && step.mission.track.lang) || 'html';
-    let hl = FM.hl(tpl, lang);
+    // A zero-width space keeps "16[[px]]" from being read as one number token.
+    let hl = FM.hl(tpl.replace(/([\w.])(zqzb\d+zqz)/g, '$1\u200b$2'), lang).replace(/\u200b/g, '');
     hl = hl.replace(/zqzb(\d+)zqz/g, (_, k) => {
       const w = Math.max(2, ...answers[k].map((a) => a.length)) + 1;
       return '<input class="blank" data-k="' + k + '" style="width:' + w + 'ch" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Blank ' + (+k + 1) + '">';
@@ -997,6 +999,7 @@
         btn.disabled = true;
         btn.classList.add('busy');
         items.forEach((li) => (li.dataset.state = 'run'));
+        verdict.innerHTML = '';
         const r = await myBench.check(step.checks, { wait: step.wait });
         btn.disabled = false;
         btn.classList.remove('busy');
@@ -1409,6 +1412,7 @@
       [['auto', 'Match device'], ['paper', 'Paper'], ['night', 'Night ops']].map(([v, l]) => '<label><input type="radio" name="theme" value="' + v + '"' + (set.theme === v ? ' checked' : '') + '><span>' + l + '</span></label>').join('') +
       '</div></fieldset>' +
       '<label class="field"><span>Code text size <output>' + set.codeSize + 'px</output></span><input type="range" name="codeSize" min="12" max="22" step="1" value="' + set.codeSize + '"></label>' +
+      '<label class="field check"><input type="checkbox" name="wrap"' + (set.wrap ? ' checked' : '') + '><span>Wrap long lines <small>in the code editor, instead of scrolling sideways</small></span></label>' +
       '<label class="field check"><input type="checkbox" name="sound"' + (set.sound ? ' checked' : '') + '><span>Sound effects <small>typewriter keys, stamps and the bell</small></span></label>' +
       '<label class="field check"><input type="checkbox" name="motion"' + (set.motion ? ' checked' : '') + '><span>Animations <small>typewriter text and stamps</small></span></label>' +
       '</form>' +
@@ -1439,6 +1443,7 @@
         if (t.checked) FM.sound('bell');
       }
       if (t.name === 'motion') set.motion = t.checked;
+      if (t.name === 'wrap') set.wrap = t.checked;
       S.save();
       applyTheme();
       renderTopbar();

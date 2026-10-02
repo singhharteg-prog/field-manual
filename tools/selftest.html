@@ -9,6 +9,11 @@
 <script src="../js/runner.js"></script>
 <script src="../content/tracks.js"></script>
 <script>
+// Errors in the course files fire here, on the top window. Errors in learner
+// code fire inside the preview iframe and are judged by the checks instead.
+window.addEventListener('error', (e) => {
+  window.__loadErrors = (window.__loadErrors || []).concat(e.message + (e.filename ? ' @ ' + e.filename.replace(/^.*\/content\//, 'content/') + ':' + e.lineno : ''));
+});
 (async function () {
   const params = new URLSearchParams(location.search);
   const files = (params.get('files') || 'html,css,js-1,js-2').split(',').filter(Boolean);
